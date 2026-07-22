@@ -24,11 +24,11 @@ jobs:
 
       - name: Lint Docker Compose file
         run: |
-          docker-compose -f deploy/docker-compose.yml config
+          docker compose -f deploy/docker-compose.yml config
           echo "✅ Docker Compose file is valid"
 
       - name: Lint all Dockerfiles
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: src/*/Dockerfile
           failure-threshold: warning
@@ -64,6 +64,7 @@ jobs:
             chmod 600 /opt/boutique/deploy/.env 
             cd /opt/boutique/scripts
             bash deploy-stack.sh
+
       - name: Verify deployment
         run: |
           sleep 15
