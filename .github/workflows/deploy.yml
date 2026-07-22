@@ -43,23 +43,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7    
-      - name: Get Droplet IP from Terraform
-        id: tf-output
+      - name: Get Droplet IP via DNS
+        id: droplet-ip
         run: |
-          cd terraform
-          terraform init -backend=false
-          terraform refresh
-          echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
-        env:
-          DIGITALOCEAN_TOKEN: ${{ secrets.DO_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_KEY }}
-
+          echo "ip=$(dig +short suworks.me | head -1)" >> $GITHUB_OUTPUT
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.5
         with:
-          host: ${{ steps.tf-output.outputs.droplet_ip }}
+          host: ${{ steps.droplet-ip.outputs.ip }}
           username: boutique
           key: ${{ secrets.SSH_PRIV_KEY }}
           script: |
@@ -71,4 +63,4 @@ jobs:
       - name: Verify deployment
         run: |
           sleep 15
-          ./scripts/verify-stack.sh ${{ steps.tf-output.outputs.droplet_ip }}
+          ./scripts/verify-stack.sh ${{ steps.droplet-ip.outputs.ip }}
