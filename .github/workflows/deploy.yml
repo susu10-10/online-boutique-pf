@@ -56,7 +56,7 @@ jobs:
           key: ${{ secrets.SSH_PRIV_KEY }}
           script: |
             sudo mkdir -p /opt/boutique/deploy
-            echo "${{ secrets.BOUT_ENV_FILE }}" > /opt/boutique/deploy/.env
+            echo "${{ secrets.BOUT_ENV_FILE }}" | sudo tee /opt/boutique/deploy/.env > /dev/null
             sudo chmod 600 /opt/boutique/deploy/.env 
             sudo chown boutique:docker /opt/boutique/deploy/.env
             cd /opt/boutique/scripts/deploy
