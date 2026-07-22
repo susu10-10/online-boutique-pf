@@ -66,7 +66,7 @@ jobs:
           host: ${{ steps.droplet-ip.outputs.ip }}
           username: boutique
           key: ${{ secrets.SSH_PRIV_KEY }}
-          source: "deploy/*"
+          source: "deploy/*,src/*"
           target: "/opt/boutique/"
 
       - name: Deploy the application
@@ -77,6 +77,7 @@ jobs:
           key: ${{ secrets.SSH_PRIV_KEY }}
           script: |
             cd /opt/boutique/deploy
+            docker compose build
             docker compose pull
             docker compose up -d --remove-orphans
             echo "==== Container Status ===="

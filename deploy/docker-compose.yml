@@ -1,8 +1,6 @@
 # Online Boutique Production deployment on digital ocean
 #Security: Containers run on internal network, only Caddy exposed to internet
 
-version: "3.9"
-
 networks:
   boutique-net:
     driver: bridge
