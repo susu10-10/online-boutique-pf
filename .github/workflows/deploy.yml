@@ -55,12 +55,10 @@ jobs:
           username: boutique
           key: ${{ secrets.SSH_PRIV_KEY }}
           script: |
-            sudo mkdir -p /opt/boutique/deploy
-            sudo chown boutique:boutique /opt/boutique/deploy/
-            echo "${{ secrets.BOUT_ENV_FILE }}" | sudo tee /opt/boutique/deploy/.env
-            sudo chmod 600 /opt/boutique/deploy/.env 
+            sudo mkdir -p /opt/boutique
+            sudo chown boutique:boutique /opt/boutique
 
-      - name: Copy compose and config files
+      - name: Copy files
         uses: appleboy/scp-action@v0.1.0
         with:
           host: ${{ steps.droplet-ip.outputs.ip }}
@@ -69,13 +67,15 @@ jobs:
           source: "deploy/*,src/*"
           target: "/opt/boutique/"
 
-      - name: Deploy the application
+      - name: Build and Deploy the application
         uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ steps.droplet-ip.outputs.ip }}
           username: boutique
           key: ${{ secrets.SSH_PRIV_KEY }}
           script: |
+            echo "${{ secrets.BOUT_ENV_FILE }}" | sudo tee /opt/boutique/deploy/.env
+            sudo chmod 600 /opt/boutique/deploy/.env 
             cd /opt/boutique/deploy
             docker compose build
             docker compose pull
