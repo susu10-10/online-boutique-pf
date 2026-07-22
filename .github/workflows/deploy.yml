@@ -6,6 +6,9 @@ on:
     types: [ completed ]
     branches: [ main ]
 
+env:
+  TRIVY_VERSION: 0.72.0
+  
 jobs:
   security-scan:
     runs-on: ubuntu-22.04

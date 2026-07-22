@@ -12,3 +12,10 @@ resource "digitalocean_droplet" "boutique" {
   # do monitoring agent
   monitoring = true
 }
+
+resource "digitalocean_project_resources" "boutique" {
+  project = data.digitalocean_project.idpprj.id
+  resources = [
+    digitalocean_droplet.boutique.urn
+  ]
+}

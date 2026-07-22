@@ -9,8 +9,8 @@ networks:
 
 volumes:
   redis-data:
-  caddy_data:/data
-  caddy_config:/config
+  caddy_data:
+  caddy_config:
 
 services:
   caddy:
@@ -21,47 +21,47 @@ services:
       - "443:443"
       - "443:443/udp"
     volumes:
-      - ./caddy_config:/config
-      - ./caddy_data:/data
+      - caddy_config:/config
+      - caddy_data:/data
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
     networks:
       - boutique-net
     depends_on:
       - frontend
 
-redis-cart:
-  image: redis:7-alpine
-  restart: always
-  volumes:
-    - redis-data:/data
-  networks:
-    - boutique-net
-  expose:
-    - 6379
-
-frontend:
-  build: ../src/frontend
-  image: boutique/frontend:latest
-  restart: always
-  networks:
-    - boutique-net
+  redis-cart:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis-data:/data
+    networks:
+      - boutique-net
     expose:
-      - 8080
-    environment:
-      PORT: "8080"
-      PRODUCT_CATALOG_SERVICE_ADDR: "productcatalogservice:3550"
-      CURRENCY_SERVICE_ADDR: "currencyservice:7000"
-      CART_SERVICE_ADDR: "cartservice:7070"
-      RECOMMENDATION_SERVICE_ADDR: "recommendationservice:8080"
-      CHECKOUT_SERVICE_ADDR: "checkoutservice:5050"
-      SHIPPING_SERVICE_ADDR: "shippingservice:50051"
-      AD_SERVICE_ADDR: "adservice:9555"
-  # Shopping assistant excluded — no service address set
-      ENV_PLATFORM: "local"
-      ENABLE_TRACING: "0"
-      ENABLE_PROFILER: "0"
-      CYMBAL_BRANDING: "false"
-      ENABLE_ASSISTANT: "false"
+      - 6379
+
+  frontend:
+    build: ../src/frontend
+    image: boutique/frontend:latest
+    restart: always
+    networks:
+      - boutique-net
+      expose:
+        - 8080
+      environment:
+        PORT: "8080"
+        PRODUCT_CATALOG_SERVICE_ADDR: "productcatalogservice:3550"
+        CURRENCY_SERVICE_ADDR: "currencyservice:7000"
+        CART_SERVICE_ADDR: "cartservice:7070"
+        RECOMMENDATION_SERVICE_ADDR: "recommendationservice:8080"
+        CHECKOUT_SERVICE_ADDR: "checkoutservice:5050"
+        SHIPPING_SERVICE_ADDR: "shippingservice:50051"
+        AD_SERVICE_ADDR: "adservice:9555"
+    # Shopping assistant excluded — no service address set
+        ENV_PLATFORM: "local"
+        ENABLE_TRACING: "0"
+        ENABLE_PROFILER: "0"
+        CYMBAL_BRANDING: "false"
+        ENABLE_ASSISTANT: "false"
 
   cartservice:
     build: ../src/cartservice/src
