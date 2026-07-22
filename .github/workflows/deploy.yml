@@ -9,12 +9,29 @@ on:
 
 env:
   TRIVY_VERSION: 0.72.0
+  DOCR: registry.digitalocean.com/idpreg
 
 jobs:
-  security-scan:
+  build-and-push:
     runs-on: ubuntu-22.04
-    #if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_TOKEN }}
+      - name: Login to DOCR
+        run: doctl registry login
+      
+      - name: Build and push all images
+        run: |
+          docker compose -f deploy/docker-compose.yml build
+          docker compose -f deploy/docker-compose.yml push
 
+
+  security-scan:
+    needs: build-and-push
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v7
       - name: Run Trivy IaC scan on deploy config
@@ -40,7 +57,6 @@ jobs:
   deploy:
     needs: security-scan
     runs-on: ubuntu-22.04
-
     steps:
       - uses: actions/checkout@v7    
       - name: Get Droplet IP via DNS
@@ -48,7 +64,7 @@ jobs:
         run: |
           echo "ip=$(dig +short suworks.me | head -1)" >> $GITHUB_OUTPUT
 
-      - name: Deploy via SSH
+      - name: Prepare directories
         uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ steps.droplet-ip.outputs.ip }}
@@ -64,10 +80,10 @@ jobs:
           host: ${{ steps.droplet-ip.outputs.ip }}
           username: boutique
           key: ${{ secrets.SSH_PRIV_KEY }}
-          source: "deploy/*,src/*"
+          source: "deploy/*"
           target: "/opt/boutique/"
 
-      - name: Build and Deploy the application
+      - name: Pull and start application
         uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ steps.droplet-ip.outputs.ip }}
@@ -75,9 +91,9 @@ jobs:
           key: ${{ secrets.SSH_PRIV_KEY }}
           script: |
             echo "${{ secrets.BOUT_ENV_FILE }}" | sudo tee /opt/boutique/deploy/.env
-            sudo chmod 600 /opt/boutique/deploy/.env 
+            sudo chmod 600 /opt/boutique/deploy/.env
+            echo "${{ secrets.DO_TOKEN }}" | docker login registry.digitalocean.com -u "${{ secrets.DOCR_USERNAME }}" --password-stdin
             cd /opt/boutique/deploy
-            docker compose build
             docker compose pull
             docker compose up -d --remove-orphans
             echo "==== Container Status ===="

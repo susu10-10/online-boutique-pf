@@ -39,7 +39,7 @@ services:
 
   frontend:
     build: ../src/frontend
-    image: boutique/frontend:latest
+    image: registry.digitalocean.com/idpreg/frontend:latest
     restart: always
     networks:
       - boutique-net
@@ -63,7 +63,7 @@ services:
 
   cartservice:
     build: ../src/cartservice/src
-    image: boutique/cartservice:latest
+    image: registry.digitalocean.com/idpreg/cartservice:latest
     restart: always
     networks:
       - boutique-net
@@ -77,7 +77,7 @@ services:
   # ──── PRODUCT CATALOG ────
   productcatalogservice:
     build: ../src/productcatalogservice
-    image: boutique/productcatalogservice:latest
+    image: registry.digitalocean.com/idpreg/productcatalogservice:latest
     restart: always
     networks:
       - boutique-net
@@ -90,7 +90,7 @@ services:
   # ──── CURRENCY SERVICE ────
   currencyservice:
     build: ../src/currencyservice
-    image: boutique/currencyservice:latest
+    image: registry.digitalocean.com/idpreg/currencyservice:latest
     restart: always
     networks:
       - boutique-net
@@ -104,7 +104,7 @@ services:
   # ──── PAYMENT SERVICE ────
   paymentservice:
     build: ../src/paymentservice
-    image: boutique/paymentservice:latest
+    image: registry.digitalocean.com/idpreg/paymentservice:latest
     restart: always
     networks:
       - boutique-net
@@ -116,7 +116,7 @@ services:
   # ──── SHIPPING SERVICE ────
   shippingservice:
     build: ../src/shippingservice
-    image: boutique/shippingservice:latest
+    image: registry.digitalocean.com/idpreg/shippingservice:latest
     restart: always
     networks:
       - boutique-net
@@ -128,7 +128,7 @@ services:
   # ──── EMAIL SERVICE ────
   emailservice:
     build: ../src/emailservice
-    image: boutique/emailservice:latest
+    image: registry.digitalocean.com/idpreg/emailservice:latest
     restart: always
     networks:
       - boutique-net
@@ -142,7 +142,7 @@ services:
   # ──── CHECKOUT SERVICE (ORCHESTRATOR) ────
   checkoutservice:
     build: ../src/checkoutservice
-    image: boutique/checkoutservice:latest
+    image: registry.digitalocean.com/idpreg/checkoutservice:latest
     restart: always
     networks:
       - boutique-net
@@ -162,7 +162,7 @@ services:
   # ──── RECOMMENDATION SERVICE ────
   recommendationservice:
     build: ../src/recommendationservice
-    image: boutique/recommendationservice:latest
+    image: registry.digitalocean.com/idpreg/recommendationservice:latest
     restart: always
     networks:
       - boutique-net
@@ -176,7 +176,7 @@ services:
   # ──── AD SERVICE ────
   adservice:
     build: ../src/adservice
-    image: boutique/adservice:latest
+    image: registry.digitalocean.com/idpreg/adservice:latest
     restart: always
     networks:
       - boutique-net
@@ -188,7 +188,7 @@ services:
   # ──── LOAD GENERATOR (OPTIONAL — START MANUALLY) ────
   loadgenerator:
     build: ../src/loadgenerator
-    image: boutique/loadgenerator:latest
+    image: registry.digitalocean.com/idpreg/loadgenerator:latest
     restart: "no"    # Only run manually
     networks:
       - boutique-net
