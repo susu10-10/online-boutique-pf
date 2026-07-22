@@ -59,7 +59,7 @@ jobs:
             echo "${{ secrets.BOUT_ENV_FILE }}" | sudo tee /opt/boutique/deploy/.env > /dev/null
             sudo chmod 600 /opt/boutique/deploy/.env 
             sudo chown boutique:docker /opt/boutique/deploy/.env
-            cd /opt/boutique/scripts/deploy
+            cd /opt/boutique/deploy
 
       - name: Copy compose and config files
         uses: appleboy/scp-action@v0.1.0
