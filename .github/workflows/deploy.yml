@@ -5,10 +5,11 @@ on:
     workflows: [ "Terraform" ]
     types: [ completed ]
     branches: [ main ]
+  workflow_dispatch:
 
 env:
   TRIVY_VERSION: 0.72.0
-  
+
 jobs:
   security-scan:
     runs-on: ubuntu-22.04
