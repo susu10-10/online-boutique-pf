@@ -3,10 +3,13 @@ terraform {
     bucket = "idp-tf"
     key = "state/terraform.tfstate"
     region = "us-east-1"
-    endpoint = "https://idp-tf.nyc3.digitaloceanspaces.com"
-
+    endpoints = {
+      s3 = "https://nyc3.digitaloceanspaces.com"
+    }
+    
 # to enable native s3 compatible state locking inside the bucket.
     use_lockfile = true
+    use_path_style = true
 
 # skip validation errors when using Do spaces instead of AWS S3
     skip_credentials_validation = true
