@@ -4,7 +4,6 @@ package_upgrade: false
 preserve_hostname: false
 hostname: boutique-droplet
 
-
 packages:
   - docker.io
   - docker-compose-v2
@@ -22,42 +21,16 @@ users:
     ssh_authorized_keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDB2D98TyoRKmi9slFwHrVMnI35goM7EF3o+CzoxovP4 idp-deploy
 
-# Create directory structure
-write_files:
-  - path: /opt/boutique/deploy/.env
-    content: ""
-    owner: boutique:boutique
-  - path: /opt/boutique/deploy/docker-compose.yml
-    content: ""
-    owner: boutique:boutique
-  - path: /opt/boutique/scripts/deploy-stack.sh
-    content: |
-      #!/bin/bash
-      cd /opt/boutique/deploy
-      docker compose pull
-      docker compose up -d
-      docker compose ps
-    owner: boutique:boutique
-    permissions: '0755'
-
 
 runcmd:
 #enable docker to start on boot
   - systemctl enable docker
   - systemctl start docker
 
-# setup directories
-  - mkdir -p /opt/boutique/scripts
-  - mkdir -p /opt/boutique/data/redis
-  - chown -R boutique:boutique /opt/boutique
-
 # basic sysctl sercurity hardening
   - sysctl -w net.ipv4.conf.all.rp_filter=1
   - sysctl -w net.ipv4.conf.all.accept_source_route=0
-  - sysctl -w kernel.exec-shield=1
 
-# inital docker compose with default configuration
-  - echo "Bootstrapping boutique server..." > /opt/boutique/BOOTSTRAP_DONE
 
 output:
   all: "| tee -a /var/log/cloud-init-output.log"

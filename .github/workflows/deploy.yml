@@ -55,12 +55,32 @@ jobs:
           username: boutique
           key: ${{ secrets.SSH_PRIV_KEY }}
           script: |
+            mkdir -p /opt/boutique/deploy
             echo "${{ secrets.BOUT_ENV_FILE }}" > /opt/boutique/deploy/.env
             chmod 600 /opt/boutique/deploy/.env 
-            cd /opt/boutique/scripts
-            bash deploy-stack.sh
+            cd /opt/boutique/scripts/deploy
 
-      - name: Verify deployment
-        run: |
-          sleep 15
-          ./scripts/verify-stack.sh ${{ steps.droplet-ip.outputs.ip }}
+      - name: Copy compose and config files
+        uses: appleboy/scp-action@v0.1.0
+        with:
+          host: ${{ steps.droplet-ip.outputs.ip }}
+          username: boutique
+          key: ${{ secrets.SSH_PRIV_KEY }}
+          source: "deploy/*"
+          target: "/opt/boutique/deploy/"
+
+      - name: Deploy the application
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ steps.droplet-ip.outputs.ip }}
+          username: boutique
+          key: ${{ secrets.SSH_PRIV_KEY }}
+          script: |
+            cd /opt/boutique/deploy
+            docker compose pull
+            docker compose up -d --remove-orphans
+            echo "==== Container Status ===="
+            docker compose ps
+            echo "Health Check Status"
+            curl -so /dev/null -w 'Frontend: %{http_code}\n' http://localhost:8080/_healthz || echo "Health Check Failed"
+
