@@ -1,40 +1,40 @@
 resource "digitalocean_firewall" "boutique" {
   name = "boutique-firewall"
-  
-  droplet_ids = [ digitalocean_droplet.boutique.id ]
+
+  droplet_ids = [digitalocean_droplet.boutique.id]
 
   inbound_rule {
-    protocol    = "tcp"
+    protocol         = "tcp"
     port_range       = "22"
-    source_addresses  = [var.github_actions_ip, "0.0.0.0/0"]
+    source_addresses = [var.github_actions_ip, "0.0.0.0/0"]
   }
 
   inbound_rule {
-    protocol    = "tcp"
+    protocol         = "tcp"
     port_range       = "80"
-    source_addresses  = ["0.0.0.0/0", "::/0"]
+    source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
   inbound_rule {
-    protocol    = "tcp"
+    protocol         = "tcp"
     port_range       = "443"
-    source_addresses  = ["0.0.0.0/0", "::/0"]
+    source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
   inbound_rule {
-    protocol = "icmp"
-    source_addresses = [ "0.0.0.0/0", "::/0" ]
+    protocol         = "icmp"
+    source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
   outbound_rule {
-    protocol    = "tcp"
-    port_range       = "1-65535"
+    protocol              = "tcp"
+    port_range            = "1-65535"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
 
   outbound_rule {
-    protocol    = "udp"
-    port_range       = "1-65535"
+    protocol              = "udp"
+    port_range            = "1-65535"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
 
