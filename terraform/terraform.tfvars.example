@@ -1,0 +1,5 @@
+# terraform.tfvars.example — Copy to terraform.tfvars and fill in
+do_token            = "CHANGEME"
+spaces_access_key   = "CHANGEME"
+spaces_secret_key   = "CHANGEME"
+ssh_fingerprint     = "CHANGEME"

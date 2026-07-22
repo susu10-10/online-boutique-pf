@@ -1,0 +1,1 @@
+# No resources needed; the droplet, firewall, and DNS are in their own files

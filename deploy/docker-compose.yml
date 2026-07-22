@@ -1,0 +1,203 @@
+# Online Boutique Production deployment on digital ocean
+#Security: Containers run on internal network, only Caddy exposed to internet
+
+version: "3.9"
+
+networks:
+  boutique-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+  caddy_data:/data
+  caddy_config:/config
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./caddy_config:/config
+      - ./caddy_data:/data
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - boutique-net
+    depends_on:
+      - frontend
+
+redis-cart:
+  image: redis:7-alpine
+  restart: always
+  volumes:
+    - redis-data:/data
+  networks:
+    - boutique-net
+  expose:
+    - 6379
+
+frontend:
+  build: ../src/frontend
+  image: boutique/frontend:latest
+  restart: always
+  networks:
+    - boutique-net
+    expose:
+      - 8080
+    environment:
+      PORT: "8080"
+      PRODUCT_CATALOG_SERVICE_ADDR: "productcatalogservice:3550"
+      CURRENCY_SERVICE_ADDR: "currencyservice:7000"
+      CART_SERVICE_ADDR: "cartservice:7070"
+      RECOMMENDATION_SERVICE_ADDR: "recommendationservice:8080"
+      CHECKOUT_SERVICE_ADDR: "checkoutservice:5050"
+      SHIPPING_SERVICE_ADDR: "shippingservice:50051"
+      AD_SERVICE_ADDR: "adservice:9555"
+  # Shopping assistant excluded — no service address set
+      ENV_PLATFORM: "local"
+      ENABLE_TRACING: "0"
+      ENABLE_PROFILER: "0"
+      CYMBAL_BRANDING: "false"
+      ENABLE_ASSISTANT: "false"
+
+  cartservice:
+    build: ../src/cartservice/src
+    image: boutique/cartservice:latest
+    restart: always
+    networks:
+      - boutique-net
+    expose:
+      - 7070
+    environment:
+      REDIS_ADDR: "redis-cart:6379"
+      ASPNETCORE_HTTP_PORTS: "7070"
+      DOTNET_EnableDiagnostics: "0"
+
+  # ──── PRODUCT CATALOG ────
+  productcatalogservice:
+    build: ../src/productcatalogservice
+    image: boutique/productcatalogservice:latest
+    restart: always
+    networks:
+      - boutique-net
+    expose:
+      - 3550
+    environment:
+      PORT: "3550"
+      EXTRA_LATENCY: "0s"    # Set to "5.5s" to inject delay (testing only)
+
+  # ──── CURRENCY SERVICE ────
+  currencyservice:
+    build: ../src/currencyservice
+    image: boutique/currencyservice:latest
+    restart: always
+    networks:
+      - boutique-net
+    expose:
+      - 7000
+    environment:
+      PORT: "7000"
+      DISABLE_PROFILER: "true"
+      ENABLE_TRACING: "0"
+
+  # ──── PAYMENT SERVICE ────
+  paymentservice:
+    build: ../src/paymentservice
+    image: boutique/paymentservice:latest
+    restart: always
+    networks:
+      - boutique-net
+    expose:
+      - 50051
+    environment:
+      PORT: "50051"
+
+  # ──── SHIPPING SERVICE ────
+  shippingservice:
+    build: ../src/shippingservice
+    image: boutique/shippingservice:latest
+    restart: always
+    networks:
+      - boutique-net
+    expose:
+      - 50051
+    environment:
+      APP_PORT: "50051"
+
+  # ──── EMAIL SERVICE ────
+  emailservice:
+    build: ../src/emailservice
+    image: boutique/emailservice:latest
+    restart: always
+    networks:
+      - boutique-net
+    expose:
+      - 8080
+    environment:
+      PORT: "8080"
+      DISABLE_PROFILER: "true"
+      ENABLE_TRACING: "0"
+
+  # ──── CHECKOUT SERVICE (ORCHESTRATOR) ────
+  checkoutservice:
+    build: ../src/checkoutservice
+    image: boutique/checkoutservice:latest
+    restart: always
+    networks:
+      - boutique-net
+    expose:
+      - 5050
+    environment:
+      PORT: "5050"
+      SHIPPING_SERVICE_ADDR: "shippingservice:50051"
+      PRODUCT_CATALOG_SERVICE_ADDR: "productcatalogservice:3550"
+      CART_SERVICE_ADDR: "cartservice:7070"
+      CURRENCY_SERVICE_ADDR: "currencyservice:7000"
+      EMAIL_SERVICE_ADDR: "emailservice:8080"
+      PAYMENT_SERVICE_ADDR: "paymentservice:50051"
+      ENABLE_TRACING: "0"
+      ENABLE_PROFILER: "0"
+
+  # ──── RECOMMENDATION SERVICE ────
+  recommendationservice:
+    build: ../src/recommendationservice
+    image: boutique/recommendationservice:latest
+    restart: always
+    networks:
+      - boutique-net
+    expose:
+      - 8080
+    environment:
+      PORT: "8080"
+      PRODUCT_CATALOG_SERVICE_ADDR: "productcatalogservice:3550"
+      ENABLE_TRACING: "0"
+
+  # ──── AD SERVICE ────
+  adservice:
+    build: ../src/adservice
+    image: boutique/adservice:latest
+    restart: always
+    networks:
+      - boutique-net
+    expose:
+      - 9555
+    environment:
+      PORT: "9555"
+
+  # ──── LOAD GENERATOR (OPTIONAL — START MANUALLY) ────
+  loadgenerator:
+    build: ../src/loadgenerator
+    image: boutique/loadgenerator:latest
+    restart: "no"    # Only run manually
+    networks:
+      - boutique-net
+    environment:
+      FRONTEND_ADDR: "frontend:8080"
+      USERS: "10"
+      RATE: "1"
+    # Start with: docker compose run loadgenerator
+    profiles:
+      - load-test

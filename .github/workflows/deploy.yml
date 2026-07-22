@@ -1,0 +1,70 @@
+name: Deploy Boutique Container
+
+on:
+  workflow_run:
+    workflows: [ "Terraform" ]
+    types: [ completed ]
+    branches: [ main ]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-22.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run Trivy IaC scan on deploy config
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: deploy/
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          format: table
+
+      - name: Lint Docker Compose file
+        run: |
+          docker-compose -f deploy/docker-compose.yml config
+          echo "✅ Docker Compose file is valid"
+
+      - name: Lint all Dockerfiles
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: src/*/Dockerfile
+          failure-threshold: warning
+
+  deploy:
+    needs: security-scan
+    runs-on: ubuntu-22.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v6    
+      - name: Get Droplet IP from Terraform
+        id: tf-output
+        run: |
+          cd terraform
+          terraform init -backend=false
+          terraform refresh
+          echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
+        env:
+          DIGITALOCEAN_TOKEN: ${{ secrets.DO_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_KEY }}
+
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ steps.tf-output.outputs.droplet_ip }}
+          username: boutique
+          key: ${{ secrets.SSH_PRIV_KEY }}
+          script: |
+            echo "${{ secrets.BOUT_ENV_FILE }}" > /opt/boutique/deploy/.env
+            chmod 600 /opt/boutique/deploy/.env 
+            cd /opt/boutique/scripts
+            bash deploy-stack.sh
+      - name: Verify deployment
+        run: |
+          sleep 15
+          ./scripts/verify-stack.sh ${{ steps.tf-output.outputs.droplet_ip }}

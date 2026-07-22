@@ -1,0 +1,19 @@
+.env
+terraform.tfvars
+
+# Terraform
+terraform/terraform.tfvars
+terraform/.terraform*
+terraform/*.tfstate*
+
+# Environment
+deploy/.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
