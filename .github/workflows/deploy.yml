@@ -67,7 +67,7 @@ jobs:
           username: boutique
           key: ${{ secrets.SSH_PRIV_KEY }}
           source: "deploy/*"
-          target: "/opt/boutique/deploy/"
+          target: "/opt/boutique/"
 
       - name: Deploy the application
         uses: appleboy/ssh-action@v1.2.5
