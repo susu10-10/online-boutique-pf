@@ -55,9 +55,10 @@ jobs:
           username: boutique
           key: ${{ secrets.SSH_PRIV_KEY }}
           script: |
-            mkdir -p /opt/boutique/deploy
+            sudo mkdir -p /opt/boutique/deploy
             echo "${{ secrets.BOUT_ENV_FILE }}" > /opt/boutique/deploy/.env
-            chmod 600 /opt/boutique/deploy/.env 
+            sudo chmod 600 /opt/boutique/deploy/.env 
+            sudo chown boutique:docker /opt/boutique/deploy/.env
             cd /opt/boutique/scripts/deploy
 
       - name: Copy compose and config files
