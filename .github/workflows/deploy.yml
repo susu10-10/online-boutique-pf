@@ -35,7 +35,7 @@ jobs:
         uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: src/*/Dockerfile
-          failure-threshold: warning
+          failure-threshold: info
 
   deploy:
     needs: security-scan
