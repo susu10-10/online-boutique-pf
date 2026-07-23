@@ -47,6 +47,7 @@ COPY --from=builder /usr/local/lib/python3.14/ /usr/local/lib/python3.14/
 
 # Add the application
 COPY . .
+USER 1000
 
 # set listen port
 ENV PORT="8080"

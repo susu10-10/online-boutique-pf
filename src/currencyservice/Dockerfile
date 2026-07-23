@@ -40,6 +40,8 @@ COPY --from=builder /usr/src/app/node_modules ./node_modules
 
 COPY . .
 
+USER 1000
+
 EXPOSE 7000
 
 ENTRYPOINT [ "node", "server.js" ]
