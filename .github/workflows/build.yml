@@ -54,11 +54,33 @@ jobs:
       - name: Scan built images with Trivy
         run: |
           docker pull aquasec/trivy:0.57.0 > /dev/null 2>&1
-          for img in $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "registry.digitalocean.com/idpreg"); do
+          
+          # Get all built images matching your registry
+           IMAGES=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "registry.digitalocean.com")
+          
+          IS_FIRST_RUN=true
+          for img in $IMAGES; do
             echo "🔎 Scanning: $img"
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-              aquasec/trivy:0.57.0 image \
-              --severity HIGH,CRITICAL --exit-code 0 --skip-version-check "$img"
+            
+            # Build database flags dynamically so it doesn't redownload for each image
+            DB_FLAGS=""
+            if [ "$IS_FIRST_RUN" = false ]; then
+              DB_FLAGS="--skip-db-update"
+            fi
+            
+            # Fixed: Put global flag '--skip-version-check' BEFORE the subcommand 'image'
+            mkdir -p /tmp/trivy-cache
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v trivy-cache:/root/.cache \
+              aquasec/trivy:0.57.0 --skip-version-check image \
+              --severity HIGH,CRITICAL \
+              --exit-code 0 \
+              $DB_FLAGS \
+              "$img"
+              
+            IS_FIRST_RUN=false
           done
+
       - name: Push all images
         run: docker compose -f deploy/docker-compose.yml push
