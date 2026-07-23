@@ -1,8 +1,6 @@
 name: Deploy Boutique Container
 
 on:
-  push:
-    branches: [ main ]
   workflow_run:
     workflows: [ "Build and Push Boutique Containers" ]
     types: [ completed ]
