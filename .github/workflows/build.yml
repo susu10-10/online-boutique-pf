@@ -3,6 +3,9 @@ name: Build and Push Boutique Containers
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'src/*'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 
 env:
@@ -53,8 +56,7 @@ jobs:
         with:
           scan-type: image
           scan-ref: |
-            registry.digitalocean.com/idpreg/frontend:latest
-            registry.digitalocean.com/idpreg/checkoutservice:latest
+            "registry.digitalocean.com/idpreg/frontend:latest,registry.digitalocean.com/idpreg/checkoutservice:latest,registry.digitalocean.com/idpreg/cartservice:latest,registry.digitalocean.com/idpreg/productcatalogservice:latest,registry.digitalocean.com/idpreg/currencyservice:latest,registry.digitalocean.com/idpreg/paymentservice:latest,registry.digitalocean.com/idpreg/shippingservice:latest,registry.digitalocean.com/idpreg/emailservice:latest,registry.digitalocean.com/idpreg/checkoutservice:latest,registry.digitalocean.com/idpreg/recommendationservice:latest,registry.digitalocean.com/idpreg/adservice:latest"
           severity: HIGH,CRITICAL
           exit-code: "0"
           format: table
