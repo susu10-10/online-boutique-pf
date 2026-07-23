@@ -1,16 +1,6 @@
 suworks.me {
-    # Rate limiting — 100 requests per minute per IP
-    rate_limit {
-        zone dynamic {
-            key {remote_host}
-            events 100
-            window 1m
-        }
-    }
-
     # Route through OAuth2 proxy (when configured)
-    reverse_proxy frontend:8080 {
-    }
+    reverse_proxy frontend:8080 
 
     # Static security headers
     header {

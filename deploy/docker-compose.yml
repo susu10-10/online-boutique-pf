@@ -37,6 +37,7 @@ services:
     tmpfs:
       - /tmp
       - /var/run
+      - /var/log
 
 
   redis-cart:
