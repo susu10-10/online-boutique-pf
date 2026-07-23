@@ -73,7 +73,7 @@ jobs:
             docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \
               -v trivy-cache:/root/.cache \
-              aquasec/trivy:0.57.0 --skip-version-check image \
+              aquasec/trivy:0.57.0 image \
               --severity HIGH,CRITICAL \
               --exit-code 0 \
               $DB_FLAGS \
