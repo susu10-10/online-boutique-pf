@@ -9,7 +9,7 @@ suworks.me {
     }
 
     # Route through OAuth2 proxy (when configured)
-    reverse_proxy oauth2-proxy:4180 {
+    reverse_proxy frontend:8080 {
         health_uri /ping
         health_interval 30s
     }

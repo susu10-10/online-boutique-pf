@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/*'
       - '.github/workflows/build.yml'
+      - 'deploy/docker-compose.yml'
   workflow_dispatch:
 
 env:
