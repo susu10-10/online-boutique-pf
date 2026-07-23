@@ -10,8 +10,6 @@ suworks.me {
 
     # Route through OAuth2 proxy (when configured)
     reverse_proxy frontend:8080 {
-        health_uri /ping
-        health_interval 30s
     }
 
     # Static security headers
