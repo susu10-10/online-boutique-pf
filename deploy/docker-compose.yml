@@ -60,6 +60,7 @@ services:
       ENABLE_PROFILER: "0"
       CYMBAL_BRANDING: "false"
       ENABLE_ASSISTANT: "false"
+      SHOPPING_ASSISTANT_SERVICE_ADDR: "assistant:8080"
 
   cartservice:
     build: ../src/cartservice/src
@@ -112,6 +113,7 @@ services:
       - 50051
     environment:
       PORT: "50051"
+      DISABLE_PROFILER: "true"
 
   # ──── SHIPPING SERVICE ────
   shippingservice:
