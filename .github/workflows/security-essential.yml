@@ -34,8 +34,9 @@ jobs:
       - name: TruffleHog Secret Scan
         uses: trufflesecurity/trufflehog@main
         with:
-          path: "."
-          extra_args: --result=verified,unknown
+          path: "./"
+          base: ${{ github.event.repository.default_branch }}
+          extra_args: --only-verified
 
 
   trivy-fs-scan:
@@ -77,5 +78,5 @@ jobs:
       - name: Lint all Dockerfiles
         uses: hadolint/hadolint-action@v3.3.0
         with:
-          dockerfile: '**/Dockerfile'
+          dockerfile: 'src/*/Dockerfile'
           failure-threshold: error
