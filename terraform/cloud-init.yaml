@@ -9,11 +9,6 @@ hostname: ${droplet_name}
 # native cloud-init ssh hardening
 ssh_pwauth: false
 
-apt:
-  sources:
-    tailscale.list:
-
-
 packages:
   - docker.io
   - docker-compose-v2
@@ -54,9 +49,9 @@ write_files:
   - path: /opt/cosign.pub
     content: |
       -----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFser5E5Yw6U9xkMvxr7OG4wPhyaY
-qsk5srtZNDcf5REO2Zor/lmsynfPN6gZ72al9Z9DAssJzY5SSbUvburT5A==
------END PUBLIC KEY-----
+      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFser5E5Yw6U9xkMvxr7OG4wPhyaY
+      qsk5srtZNDcf5REO2Zor/lmsynfPN6gZ72al9Z9DAssJzY5SSbUvburT5A==
+      -----END PUBLIC KEY-----
     owner: root:root
     permissions: '0644'
 
@@ -131,19 +126,20 @@ qsk5srtZNDcf5REO2Zor/lmsynfPN6gZ72al9Z9DAssJzY5SSbUvburT5A==
     permissions: '0644'
 
 runcmd:
+# Tailscale secure tunnel for all droplet traffic
+  - systemctl enable --now tailscaled
+  - tailscale up --authkey="${tailscale_authkey}" --ssh --accept-routes --accept-dns=false
   - sysctl --system
   # Ensure /opt/boutique exists
   - mkdir -p /opt/boutique/{deploy,scripts,data}
   - chown -R boutique:boutique /opt/boutique
-# Tailscale secure tunnel for all droplet traffic
-  - tailscale up --authkey="${tailscale_authkey}" --ssh --accept-routes --accept-dns=false
+
 # Disable Root SSH
   - sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
   - sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
   - systemctl restart ssh
 #enable docker to start on boot
   - systemctl enable --now docker
-  - systemctl enable --now tailscaled
 # UFW - Allow Tailscale interface, block everything else
   - ufw default deny incoming
   - ufw default allow outgoing
