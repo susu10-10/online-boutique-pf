@@ -100,3 +100,17 @@ flowchart TD
     FIREWALL -.->|Protects| Compute
     DNS -.->|Routes Traffic To| CADDY
     CADDY -.->|Hosts On| DROPLET
+
+```
+
+## Overview
+
+| Gate | Tool | What it catches | Result |
+|---|---|---|---|
+| Dockerfile lint | Hadolint | Untagged images, root containers, missing USER | All 11 services run as non-root |
+| IaC scan | Trivy config | Terraform/compose misconfigs | Firewall locked to 22/80/443 |
+| Image scan | Trivy container | HIGH/CRITICAL CVEs | Block gate — fails if found |
+| Code scan | Semgrep | OWASP Top 10 patterns | Runs on every PR |
+| Secrets | TruffleHog | Leaked credentials | Scans all commits |
+| Image signing | Cosign | Signed images with SHA tags | Verified before deploy |
+| Runtime | Falco (future) | Anomalous container behavior | Planned |
