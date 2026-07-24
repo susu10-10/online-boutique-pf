@@ -1,6 +1,4 @@
 #cloud-config
-# this header must generally appear on the first line of a cloud config file
-
 package_update: true
 package_upgrade: false
 preserve_hostname: false
@@ -33,7 +31,7 @@ write_files:
     content: |
       APT::Periodic::Update-Package-Lists "1";
       APT::Periodic::Unattended-Upgrade "1";
-      APT::Periodic::AutocleanInterval "7"
+      APT::Periodic::AutocleanInterval "7";
     owner: root:root
     permissions: '0644'
 
@@ -69,7 +67,7 @@ write_files:
       fi
 
       if [ -n "$LAST_SHA" ]; then
-        echo "🔄 Rolling back docker-compose to tag: $LAST_SHA"
+        echo " Rolling back docker-compose to tag: $LAST_SHA"
         
         # Update your docker-compose file image tags to match the old SHA
         # (Assuming your compose file references an env variable or image string)
@@ -77,9 +75,9 @@ write_files:
         
         docker compose -f "$DEPLOY_DIR/docker-compose.yml" pull
         docker compose -f "$DEPLOY_DIR/docker-compose.yml" up -d --remove-orphans
-        echo "✅ Successfully rolled back to $LAST_SHA"
+        echo " Successfully rolled back to $LAST_SHA"
       else
-        echo "⚠️ No previous deploy state found at $LAST_FILE. Rollback aborted."
+        echo " No previous deploy state found at $LAST_FILE. Rollback aborted."
         exit 1
       fi
     owner: boutique:boutique
@@ -111,7 +109,7 @@ write_files:
             s3://idp-tf/redis-backups/redis-$TIMESTAMP.rdb
       # Keep last 5
       ls -t "$BACKUP_DIR"/*.rdb 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null
-      echo "✅ Redis backup: redis-$TIMESTAMP.rdb"
+      echo " Redis backup: redis-$TIMESTAMP.rdb"
     owner: root:root
     permissions: '0644'
 
