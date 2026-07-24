@@ -44,7 +44,7 @@ services:
           memory: 256M
           cpus: "0.5"
     healthcheck:
-      test: ["curl", "-f", "http://localhost:2019/config"]
+      test: ["CMD", "curl", "-f", "http://localhost:2019/config"]
       interval: 1m30s
       timeout: 30s
       retries: 5
@@ -61,7 +61,7 @@ services:
     expose:
       - 6379
     healthcheck:
-      test: ["redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 1m30s
       timeout: 30s
       retries: 5
@@ -145,7 +145,7 @@ services:
         reservations:
           memory: 256M
     healthcheck:
-      test: ["grpc health", "localhost:7070"]
+      test: ["CMD", "curl", "-f", "http://localhost:7070/healthz"]
       interval: 1m30s
       timeout: 30s
       retries: 5

@@ -37,6 +37,4 @@ resource "digitalocean_firewall" "boutique" {
     port_range            = "1-65535"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
-
-
 }
