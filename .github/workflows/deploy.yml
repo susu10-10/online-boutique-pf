@@ -8,54 +8,10 @@ on:
   workflow_dispatch:
 
 env:
-  TRIVY_VERSION: 0.72.0
   DOCR: registry.digitalocean.com/idpreg
 
 jobs:  
   deploy:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v7    
-      - name: Get Droplet IP via DNS
-        id: droplet-ip
-        run: |
-          echo "ip=$(dig +short suworks.me | head -1)" >> $GITHUB_OUTPUT
-
-      - name: Prepare directories
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ steps.droplet-ip.outputs.ip }}
-          username: boutique
-          key: ${{ secrets.SSH_PRIV_KEY }}
-          script: |
-            sudo mkdir -p /opt/boutique
-            sudo chown boutique:boutique /opt/boutique
-
-      - name: Copy files
-        uses: appleboy/scp-action@v0.1.0
-        with:
-          host: ${{ steps.droplet-ip.outputs.ip }}
-          username: boutique
-          key: ${{ secrets.SSH_PRIV_KEY }}
-          source: "deploy/*"
-          target: "/opt/boutique/"
-
-      - name: Pull and start application
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ steps.droplet-ip.outputs.ip }}
-          username: boutique
-          key: ${{ secrets.SSH_PRIV_KEY }}
-          script: |
-            echo "${{ secrets.BOUT_ENV_FILE }}" | sudo tee /opt/boutique/deploy/.env
-            sudo chmod 600 /opt/boutique/deploy/.env
-            echo "${{ secrets.DO_TOKEN }}" | docker login registry.digitalocean.com -u "${{ secrets.DOCR_USERNAME }}" --password-stdin
-            cd /opt/boutique/deploy
-            docker compose pull
-            docker compose up -d --remove-orphans
-            echo "==== Container Status ===="
-            docker compose ps
-            echo "Health Check Status"
-            curl -so /dev/null -w 'Frontend: %{http_code}\n' http://frontend:8080/_healthz || echo "Health Check Failed"
-
+    uses: ./.github/workflows/deploy-reusable.yml
+    secrets: inherit

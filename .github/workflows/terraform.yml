@@ -15,7 +15,7 @@ env:
 
 jobs:
   terraform:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: terraform
@@ -51,6 +51,8 @@ jobs:
           TF_VAR_do_spaces_access_key: ${{ secrets.SPACES_ACCESS_KEY }}
           TF_VAR_do_spaces_secret_key: ${{ secrets.SPACES_SECRET_KEY }}
           TF_VAR_ssh_fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          TF_VAR_ts_client_id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          TF_VAR_ts_client_secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
 
       - name: Terraform Apply (main only)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -63,3 +65,5 @@ jobs:
           TF_VAR_do_spaces_access_key: ${{ secrets.SPACES_ACCESS_KEY }}
           TF_VAR_do_spaces_secret_key: ${{ secrets.SPACES_SECRET_KEY }}
           TF_VAR_ssh_fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          TF_VAR_ts_client_id: ${{ secrets.TS_OAUTH_CLIENT_ID}}
+          TF_VAR_ts_client_secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}

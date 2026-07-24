@@ -1,16 +1,28 @@
 #cloud-config
+# this header must generally appear on the first line of a cloud config file
+
 package_update: true
 package_upgrade: false
 preserve_hostname: false
-hostname: boutique-droplet
+hostname: ${droplet_name}
+
+# native cloud-init ssh hardening
+ssh_pwauth: false
+
+apt:
+  sources:
+    tailscale.list:
+
 
 packages:
   - docker.io
   - docker-compose-v2
   - ufw
-  - htop
+  - unattended-upgrades
   - curl
   - jq
+  - tailscale
+  - s3cmd
 
 # Create the system user for the boutique server
 users:
@@ -21,16 +33,134 @@ users:
     ssh_authorized_keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDB2D98TyoRKmi9slFwHrVMnI35goM7EF3o+CzoxovP4 idp-deploy
 
+write_files:
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::AutocleanInterval "7"
+    owner: root:root
+    permissions: '0644'
+
+  # basic sysctl sercurity hardening and persistent across reboots
+  - path: /etc/sysctl.d/99-security-hardening.conf
+    content: |
+      net.ipv4.conf.all.rp_filter=1
+      net.ipv4.conf.all.accept_source_route=0
+    owner: root:root
+    permissions: '0644'
+
+# Write custom cosign public key safely to the disk
+  - path: /opt/cosign.pub
+    content: |
+      -----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFser5E5Yw6U9xkMvxr7OG4wPhyaY
+qsk5srtZNDcf5REO2Zor/lmsynfPN6gZ72al9Z9DAssJzY5SSbUvburT5A==
+-----END PUBLIC KEY-----
+    owner: root:root
+    permissions: '0644'
+
+ # FIXED: Multi-line rollback logic with safe fallbacks and true state restoration
+  - path: /opt/boutique/scripts/deploy-rollback.sh
+    content: |
+      #!/bin/bash
+      set -e
+      
+      DEPLOY_DIR="/opt/boutique/deploy"
+      LAST_FILE="$DEPLOY_DIR/last_deploy.json"
+      
+      if [ -f "$LAST_FILE" ]; then
+        LAST_SHA=$(jq -r '.last_sha // empty' "$LAST_FILE")
+      fi
+
+      if [ -n "$LAST_SHA" ]; then
+        echo "🔄 Rolling back docker-compose to tag: $LAST_SHA"
+        
+        # Update your docker-compose file image tags to match the old SHA
+        # (Assuming your compose file references an env variable or image string)
+        export IMAGE_TAG="$LAST_SHA"
+        
+        docker compose -f "$DEPLOY_DIR/docker-compose.yml" pull
+        docker compose -f "$DEPLOY_DIR/docker-compose.yml" up -d --remove-orphans
+        echo "✅ Successfully rolled back to $LAST_SHA"
+      else
+        echo "⚠️ No previous deploy state found at $LAST_FILE. Rollback aborted."
+        exit 1
+      fi
+    owner: boutique:boutique
+    permissions: '0755'
+
+# Redis Backup to Space
+# a better approach is using s3cmd.
+  - path: /opt/boutique/scripts/redis-backup.sh
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      BACKUP_DIR=/tmp/redis-backups
+      TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+      
+      mkdir -p "$BACKUP_DIR"
+      
+      # Save Redis to disk
+      docker exec deploy-redis-cart-1 redis-cli SAVE > /dev/null 2>&1
+      
+      # Copy dump file locally
+      docker cp deploy-redis-cart-1:/data/dump.rdb "$BACKUP_DIR/redis-$TIMESTAMP.rdb"
+      
+      # Upload to Spaces
+      s3cmd --access_key=${spaces_key} \
+            --secret_key=${spaces_secret} \
+            --host=nyc3.digitaloceanspaces.com \
+            --host-bucket=idp-tf.nyc3.digitaloceanspaces.com \
+            put "$BACKUP_DIR/redis-$TIMESTAMP.rdb" \
+            s3://idp-tf/redis-backups/redis-$TIMESTAMP.rdb
+      # Keep last 5
+      ls -t "$BACKUP_DIR"/*.rdb 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null
+      echo "✅ Redis backup: redis-$TIMESTAMP.rdb"
+    owner: root:root
+    permissions: '0644'
+
+  - path: /etc/cron.d/redis-backup
+    content: |
+      SHELL=/bin/bash
+      PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      SPACES_KEY=${spaces_key}
+      SPACES_SECRET=${spaces_secret}
+      0 0 * * * root /opt/boutique/scripts/redis-backup.sh
+    owner: root:root
+    permissions: '0644'
 
 runcmd:
+  - sysctl --system
+  # Ensure /opt/boutique exists
+  - mkdir -p /opt/boutique/{deploy,scripts,data}
+  - chown -R boutique:boutique /opt/boutique
+# Tailscale secure tunnel for all droplet traffic
+  - tailscale up --authkey="${tailscale_authkey}" --ssh --accept-routes --accept-dns=false
+# Disable Root SSH
+  - sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
+  - sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+  - systemctl restart ssh
 #enable docker to start on boot
-  - systemctl enable docker
-  - systemctl start docker
+  - systemctl enable --now docker
+  - systemctl enable --now tailscaled
+# UFW - Allow Tailscale interface, block everything else
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow in on tailscale0
+# open applications to the public web
+  - ufw allow 80/tcp comment 'Public HTTP Web'
+  - ufw allow 443/tcp comment 'Public HTTPS Web'
+# explicity deny ssh on public interface only via tailscale
+  - ufw deny in on eth0 to any port 22
+# Fix UFW + Docker security vulnerability
+  - sed -i 's/DEFAULT_FORWARD_POLICY="DROP"/DEFAULT_FORWARD_POLICY="ACCEPT"/' /etc/default/ufw
+  - ufw --force enable
+  - ufw reload
 
-# basic sysctl sercurity hardening
-  - sysctl -w net.ipv4.conf.all.rp_filter=1
-  - sysctl -w net.ipv4.conf.all.accept_source_route=0
-
+# Install Cosign Public Key
+  - curl -sL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
+  - chmod +x /usr/local/bin/cosign
 
 output:
   all: "| tee -a /var/log/cloud-init-output.log"

@@ -1,0 +1,28 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'deploy/**'
+      - '.github/workflows/**'
+
+jobs:
+  check-security:
+    uses: ./.github/workflows/security-essential.yml
+
+  app-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Test placeholder
+        run: |
+          echo "Running tests on ${{ matrix.os }}"
+          echo "Add test here"
+          # after test is done
+          echo "Tests completed on ${{ matrix.os }}"

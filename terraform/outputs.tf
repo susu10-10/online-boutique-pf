@@ -12,3 +12,8 @@ output "droplet_urn" {
   description = "URN of the Boutique Droplet"
   value       = digitalocean_droplet.boutique.urn
 }
+
+output "droplet_name" {
+  description = "Name of the Boutique Droplet"
+  value       = digitalocean_droplet.boutique.name
+}

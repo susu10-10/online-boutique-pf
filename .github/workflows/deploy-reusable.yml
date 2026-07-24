@@ -1,0 +1,110 @@
+name: Deploy to Droplet (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      droplet_ip:
+        required: false
+        type: string
+        default: "boutique-droplet.tail107809.ts.net"
+
+env:
+  DOCR: registry.digitalocean.com/idpreg
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Connect to Private Tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.GH_TS_CLIENTID }}
+          oauth-secret: ${{ secrets.GH_TS_CLIENTSECRETS }}
+          tags: tag:ghrunners
+
+      - name: Resolve Tailscale node target
+        id: target-host
+        run: |
+          # my Tailscale network domain name tail107809.ts.net
+          echo "host=${{ inputs.droplet_ip }}" >> $GITHUB_OUTPUT
+
+      - name: Prepare directories
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ steps.target-host.outputs.host }}
+          username: boutique
+          key: ${{ secrets.SSH_PRIV_KEY }}
+          script: |
+            sudo mkdir -p /opt/boutique
+            sudo chown -R boutique:boutique /opt/boutique
+
+      - name: Copy deploy files
+        uses: appleboy/scp-action@v0.1.0
+        with:
+          host: ${{ steps.target-host.outputs.host }}
+          username: boutique
+          key: ${{ secrets.SSH_PRIV_KEY }}
+          source: "deploy/*"
+          target: "/opt/boutique/"
+
+      - name: Pull, verify, deploy
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ steps.target-host.outputs.host }}
+          username: boutique
+          key: ${{ secrets.SSH_PRIV_KEY }}
+          script: |
+            SHA_TAG="sha-${{ github.sha }}"
+            echo "${{ secrets.BOUT_ENV_FILE }}" | sudo tee /opt/boutique/deploy/.env > /dev/null
+            sudo chmod 600 /opt/boutique/deploy/.env
+            echo "${{ secrets.COSIGN_PUBLIC_KEY }}" | sudo tee /opt/cosign.pub > /dev/null
+            sudo chmod 644 /opt/cosign.pub
+            echo "${{ secrets.DO_TOKEN }}" | docker login registry.digitalocean.com -u "${{ secrets.DOCR_USERNAME }}" --password-stdin
+            
+            # Restore Redis from Spaces backup if available
+            if s3cmd \
+              --access_key=${{ secrets.SPACES_ACCESS_KEY }} \
+              --secret_key=${{ secrets.SPACES_SECRET_KEY }} \
+              --host=nyc3.digitaloceanspaces.com \
+              --host-bucket=idp-tf.nyc3.digitaloceanspaces.com \
+              ls s3://idp-tf/redis-backups/ 2>/dev/null | head -1; then
+              BACKUP_FILE=$(s3cmd --access_key=${{ secrets.SPACES_ACCESS_KEY }} \
+                                  --secret_key=${{ secrets.SPACES_SECRET_KEY }} \
+                                  --host=nyc3.digitaloceanspaces.com \
+                                  --host-bucket=idp-tf.nyc3.digitaloceanspaces.com \
+                                  ls s3://idp-tf/redis-backups/ | sort | tail -1 | awk '{print $4}')
+              s3cmd get "$BACKUP_FILE" /tmp/redis-restore.rdb
+              echo "✅ Redis backup restored from $BACKUP_FILE"
+            fi
+
+            # Pull and verify images
+            docker compose -f /opt/boutique/deploy/docker-compose.yml pull
+            docker pull "$DOCR/frontend:$SHA_TAG"
+            cosign verify --key /opt/cosign.pub "$DOCR/frontend:$SHA_TAG"
+            docker tag "$DOCR/frontend:$SHA_TAG" "$DOCR/frontend:latest"
+
+            # Start stack
+            docker compose -f /opt/boutique/deploy/docker-compose.yml up -d --remove-orphans
+
+            # Copy Redis backup into container if restored
+            if [ -f /tmp/redis-restore.rdb ]; then
+              docker cp /tmp/redis-restore.rdb deploy-redis-cart-1:/data/dump.rdb
+              docker exec deploy-redis-cart-1 redis-cli CONFIG SET dir /data
+              docker exec deploy-redis-cart-1 redis-cli CONFIG SET dbfilename dump.rdb
+              docker exec deploy-redis-cart-1 redis-cli DEBUG RELOAD
+              rm /tmp/redis-restore.rdb
+              echo "✅ Redis data loaded from backup"
+            fi
+
+            # Health check
+            for i in 1 2 3 4 5; do
+              STATUS=$(curl -so /dev/null -w '%{http_code}' http://frontend:8080/_healthz || echo "Error")
+              if [ "$STATUS" = "200" ]; then
+                echo "🚀 Frontend healthy"
+                break
+              fi
+              sleep 2
+            done
+            [ "$STATUS" != "200" ] && echo "🔴 Health check failed" && exit 1

@@ -1,0 +1,82 @@
+name: Security Scan
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+env:
+  TRIVY_VERSION: 0.72.0
+
+jobs:
+  semgrep-scan:
+    runs-on: ubuntu-24.04
+    container:
+      image: semgrep/semgrep
+    if: (github.actor != 'dependabot[bot]')
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Semgrep OWASP + custom rules
+        run: |
+          semgrep ci --config=p/owasp-top-ten --metrics=off
+
+  truffle-secrets:
+    runs-on: ubuntu-24.04
+    container:
+      image: trufflesecurity/trufflehog
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: TruffleHog Secret Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: "."
+          extra_args: --result=verified,unknown
+
+
+  trivy-fs-scan:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: '.'
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          format: 'table'
+
+  checkov-config-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Checkov IaC Scan
+        uses: bridgecrewio/checkov-action@v12.2982.0
+        with:
+          directory: terraform/
+          framework: all
+          output_format: sarif
+          soft_fail: false
+    
+  hadolint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Lint Docker Compose file
+        run: |
+          docker compose -f deploy/docker-compose.yml config
+          echo "✅ Docker Compose file is valid"
+
+      - name: Lint all Dockerfiles
+        uses: hadolint/hadolint-action@v3.3.0
+        with:
+          dockerfile: '**/Dockerfile'
+          failure-threshold: error

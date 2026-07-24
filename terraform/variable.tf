@@ -50,3 +50,21 @@ variable "github_actions_ip" {
   type        = string
   default     = "0.0.0.0/0"
 }
+
+variable "ts_client_id" {
+  description = "Tailscale Client ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "ts_client_secret" {
+  description = "Tailscale Client Secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "droplet_name" {
+  description = "Droplet Hostname"
+  type = string
+  default = "boutique-droplet"
+}
