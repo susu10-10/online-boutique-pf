@@ -1,6 +1,6 @@
 # Creates a fresh single use key on every apply
 resource "tailscale_tailnet_key" "boutique_key" {
-  reusable      = true #single-use for server boot security
+  reusable      = true  #single-use for server boot security
   ephemeral     = false # server is permanent
   preauthorized = true  # skip manual web dashboard approval
   expiry        = 3600  # token self-destruct in 1 hr if build fails
