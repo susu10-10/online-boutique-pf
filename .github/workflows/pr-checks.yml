@@ -9,9 +9,6 @@ on:
       - '.github/workflows/**'
 
 jobs:
-  check-security:
-    uses: ./.github/workflows/security-essential.yml
-
   app-tests:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -26,3 +23,7 @@ jobs:
           echo "Add test here"
           # after test is done
           echo "Tests completed on ${{ matrix.os }}"
+
+  check-security:
+    uses: ./.github/workflows/security-essential.yml
+
