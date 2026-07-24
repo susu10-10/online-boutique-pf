@@ -124,36 +124,43 @@ write_files:
     permissions: '0644'
 
 runcmd:
-  - curl -fsSL https://tailscale.com/install.sh | sh
-# Tailscale secure tunnel for all droplet traffic
-  - systemctl enable --now tailscaled
-  - tailscale up --authkey="${tailscale_authkey}" --ssh --accept-routes --accept-dns=false
+# 1. Update kernel configs
   - sysctl --system
-  # Ensure /opt/boutique exists
+
+  # 2. Deployment directories
   - mkdir -p /opt/boutique/{deploy,scripts,data}
   - chown -R boutique:boutique /opt/boutique
 
-# Disable Root SSH
+  # 3. Harden SSH
   - sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
   - sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
   - systemctl restart ssh
-#enable docker to start on boot
+
+  # 4. Install Tailscale via official script (adds repo, installs, enables service)
+  - curl -fsSL https://tailscale.com/install.sh | sh
+
+  # 5. Wait for tailscaled to be fully active before proceeding
+  - sh -c 'for i in 1 2 3 4 5; do systemctl is-active tailscaled >/dev/null 2>&1 && break; sleep 1; done'
+
+  # 6. Join tailnet (automatically authenticates via Terraform-generated key)
+  - tailscale up --authkey="${tailscale_authkey}" --ssh --accept-routes --accept-dns=false
+
+  # 7. Start Docker
   - systemctl enable --now docker
-# UFW - Allow Tailscale interface, block everything else
+
+  # 8. UFW policies
   - ufw default deny incoming
   - ufw default allow outgoing
   - ufw allow in on tailscale0
-# open applications to the public web
+  - ufw allow out on tailscale0
   - ufw allow 80/tcp comment 'Public HTTP Web'
   - ufw allow 443/tcp comment 'Public HTTPS Web'
-# explicity deny ssh on public interface only via tailscale
   - ufw deny in on eth0 to any port 22
-# Fix UFW + Docker security vulnerability
   - sed -i 's/DEFAULT_FORWARD_POLICY="DROP"/DEFAULT_FORWARD_POLICY="ACCEPT"/' /etc/default/ufw
   - ufw --force enable
   - ufw reload
 
-# Install Cosign Public Key
+  # 9. Install Cosign
   - curl -sL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
   - chmod +x /usr/local/bin/cosign
 
