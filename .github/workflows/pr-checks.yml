@@ -7,6 +7,7 @@ on:
       - 'src/**'
       - 'deploy/**'
       - '.github/workflows/**'
+      - 'terraform/**'
 
 permissions:
   contents: read
