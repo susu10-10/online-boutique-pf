@@ -8,7 +8,14 @@ on:
       - 'deploy/**'
       - '.github/workflows/**'
 
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
 jobs:
+  check-security:
+    uses: ./.github/workflows/security-essential.yml
   app-tests:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -24,6 +31,4 @@ jobs:
           # after test is done
           echo "Tests completed on ${{ matrix.os }}"
 
-  check-security:
-    uses: ./.github/workflows/security-essential.yml
 
