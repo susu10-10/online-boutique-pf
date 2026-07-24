@@ -1,0 +1,58 @@
+# Clean up workflow for Infrastructure
+
+name: Cleanup Boutique
+
+on: 
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Cleanup Mode'
+        required: true
+        default: 'soft'
+        type: choice
+        options:
+          - 'soft'
+          - 'full'
+      confirm:
+        description: 'Type "destroy" to confirm full cleanup'
+        required: true
+        default: ''
+        type: string
+
+jobs:
+  cleanup-infra:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Get Droplet IP via DNS
+        id: droplet-ip
+        run: |
+          echo "ip=$(dig +short suworks.me | head -1)" >> $GITHUB_OUTPUT
+
+      - name: Soft cleanup, stop containers
+        if: ${{ github.event.inputs.mode == 'soft' }}
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ steps.droplet-ip.outputs.ip }}
+          username: boutique
+          key: ${{ secrets.SSH_PRIV_KEY }}
+          script: |
+            cd /opt/boutique/deploy
+            docker compose down --remove-orphans
+            echo "✅ Containers stopped. Images and volumes preserved."
+
+      - name: Full cleanup, remove everything
+        if: ${{ github.event.inputs.mode == 'full' }}
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ steps.droplet-ip.outputs.ip }}
+          username: boutique
+          key: ${{ secrets.SSH_PRIV_KEY }}
+          script: |
+            cd /opt/boutique/deploy
+            docker compose down -v --rmi all --remove-orphans
+            docker system prune -af --volumes
+            echo "✅ All containers, images, volumes, and cache removed."
+
+
