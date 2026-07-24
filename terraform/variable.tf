@@ -65,6 +65,6 @@ variable "ts_client_secret" {
 
 variable "droplet_name" {
   description = "Droplet Hostname"
-  type = string
-  default = "boutique-droplet"
+  type        = string
+  default     = "boutique-droplet"
 }
