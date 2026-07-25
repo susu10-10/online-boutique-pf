@@ -7,6 +7,10 @@ on:
         required: false
         type: string
         default: ""
+      build_sha:
+        required: false
+        type: string
+        default: ""
 
 env:
   DOCR: registry.digitalocean.com/idpreg
@@ -55,7 +59,7 @@ jobs:
           username: boutique
           key: ${{ secrets.SSH_PRIV_KEY }}
           script: |
-            SHA_TAG="sha-${{ github.sha }}"
+            SHA_TAG="sha-${{ inputs.build_sha }}"
             export DOCR=registry.digitalocean.com/idpreg
             echo "${{ secrets.BOUT_ENV_FILE }}" | sudo tee /opt/boutique/deploy/.env > /dev/null
             sudo chmod 600 /opt/boutique/deploy/.env

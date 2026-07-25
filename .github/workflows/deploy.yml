@@ -11,7 +11,9 @@ env:
   DOCR: registry.digitalocean.com/idpreg
 
 jobs:  
-  deploy:
+  deploy-boutique:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     uses: ./.github/workflows/deploy-reusable.yml
+    with:
+      build_sha: ${{ github.event.workflow_run.head_sha || github.sha }}
     secrets: inherit
