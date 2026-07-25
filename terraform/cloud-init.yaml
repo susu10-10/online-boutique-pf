@@ -14,8 +14,8 @@ packages:
   - unattended-upgrades
   - curl
   - jq
-  - tailscale
   - s3cmd
+  - tailscale
 
 # Create the system user for the boutique server
 users:
@@ -53,7 +53,7 @@ write_files:
     owner: root:root
     permissions: '0644'
 
- # FIXED: Multi-line rollback logic with safe fallbacks and true state restoration
+ # Multi-line rollback logic with safe fallbacks and true state restoration
   - path: /opt/boutique/scripts/deploy-rollback.sh
     content: |
       #!/bin/bash
@@ -136,11 +136,16 @@ runcmd:
   - sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
   - systemctl restart ssh
 
-  # 4. Install Tailscale via official script (adds repo, installs, enables service)
-  - curl -fsSL https://tailscale.com/install.sh | sh
+  - systemctl enable --now tailscaled
 
-  # 5. Wait for tailscaled to be fully active before proceeding
-  - sh -c 'for i in 1 2 3 4 5; do systemctl is-active tailscaled >/dev/null 2>&1 && break; sleep 1; done'
+  # 4. Install Tailscale via official script (adds repo, installs, enables service)
+  # - curl -fsSL https://tailscale.com/install.sh | sh
+
+  # 5. FIXED TIME BUFFER: Loop and wait until tailscaled is 100% active (Max 10 seconds)
+  - sh -c 'for i in {1..10}; do systemctl is-active tailscaled >/dev/null 2>&1 && break; echo "Waiting for tailscaled..."; sleep 1; done'
+
+  # 6. FIXED TIME BUFFER: Loop and wait for the tailscale0 network interface card to exist (Max 10 seconds)
+  - sh -c 'for i in {1..10}; do ip link show tailscale0 >/dev/null 2>&1 && break; echo "Waiting for tailscale0 interface..."; sleep 1; done'
 
   # 6. Join tailnet (automatically authenticates via Terraform-generated key)
   - tailscale up --authkey="${tailscale_authkey}" --ssh --accept-routes --accept-dns=false
