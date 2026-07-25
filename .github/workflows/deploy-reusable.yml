@@ -68,22 +68,6 @@ jobs:
             sudo chmod 644 /opt/cosign.pub
             echo "${{ secrets.DO_TOKEN }}" | docker login registry.digitalocean.com -u "${{ secrets.DOCR_USERNAME }}" --password-stdin
             
-            # Restore Redis from Spaces backup if available
-            if s3cmd \
-              --access_key=${{ secrets.SPACES_ACCESS_KEY }} \
-              --secret_key=${{ secrets.SPACES_SECRET_KEY }} \
-              --host=nyc3.digitaloceanspaces.com \
-              --host-bucket=idp-tf.nyc3.digitaloceanspaces.com \
-              ls s3://idp-tf/redis-backups/ 2>/dev/null | head -1; then
-              BACKUP_FILE=$(s3cmd --access_key=${{ secrets.SPACES_ACCESS_KEY }} \
-                                  --secret_key=${{ secrets.SPACES_SECRET_KEY }} \
-                                  --host=nyc3.digitaloceanspaces.com \
-                                  --host-bucket=idp-tf.nyc3.digitaloceanspaces.com \
-                                  ls s3://idp-tf/redis-backups/ | sort | tail -1 | awk '{print $4}')
-              s3cmd get "$BACKUP_FILE" /tmp/redis-restore.rdb
-              echo "✅ Redis backup restored from $BACKUP_FILE"
-            fi
-
             # Pull and verify images
             docker compose -f /opt/boutique/deploy/docker-compose.yml pull
             docker pull "$DOCR/frontend:$SHA_TAG"
@@ -92,16 +76,6 @@ jobs:
 
             # Start stack
             docker compose -f /opt/boutique/deploy/docker-compose.yml up -d --remove-orphans
-
-            # Copy Redis backup into container if restored
-            if [ -f /tmp/redis-restore.rdb ]; then
-              docker cp /tmp/redis-restore.rdb deploy-redis-cart-1:/data/dump.rdb
-              docker exec deploy-redis-cart-1 redis-cli CONFIG SET dir /data
-              docker exec deploy-redis-cart-1 redis-cli CONFIG SET dbfilename dump.rdb
-              docker exec deploy-redis-cart-1 redis-cli DEBUG RELOAD
-              rm /tmp/redis-restore.rdb
-              echo "✅ Redis data loaded from backup"
-            fi
 
             # Health check via public domain (resolves locally)
             for i in 1 2 3 4 5; do
