@@ -6,7 +6,7 @@ resource "digitalocean_firewall" "boutique" {
   inbound_rule {
     protocol         = "tcp"
     port_range       = "22"
-    source_addresses = [var.github_actions_ip, "0.0.0.0/0"]
+    source_addresses = ["0.0.0.0/0"]
   }
 
   inbound_rule {

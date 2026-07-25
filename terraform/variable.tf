@@ -45,11 +45,6 @@ variable "vpc_cidr" {
   default     = "10.111.0.0/20"
 }
 
-variable "github_actions_ip" {
-  description = "IP address for GitHub Actions"
-  type        = string
-  default     = "0.0.0.0/0"
-}
 
 variable "ts_client_id" {
   description = "Tailscale Client ID"
