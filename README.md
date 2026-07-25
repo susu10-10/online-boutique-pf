@@ -1,7 +1,7 @@
 
 # Online Boutique: Production-Grade DevSecOps Pipeline
 
-A hardened, GitOps-driven deployment of Google's 11-microservice Online Boutique app on DigitalOcean. This project demonstrates enterprise-grade zero-trust security, automated CI/CD hardening, and immutable infrastructure designed for high security and low operational overhead.
+A GitOps-driven deployment of [Google's 11-microservice Online Boutique app](https://github.com/GoogleCloudPlatform/microservices-demo) on DigitalOcean. This project demonstrates enterprise-grade zero-trust security, automated CI/CD hardening, and immutable infrastructure designed for high security and low operational overhead.
 
 ## 🛠️ Architecture Highlights
 
