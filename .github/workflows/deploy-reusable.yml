@@ -27,17 +27,7 @@ jobs:
       - name: Resolve Tailscale node target
         id: target-host
         run: |
-          # Use explicit IP if provided (DR workflow), otherwise resolve via tag
-          if [ -n "${{ inputs.droplet_ip }}" ]; then
-            echo "host=${{ inputs.droplet_ip }}" >> $GITHUB_OUTPUT
-          else
-            IP=$(tailscale ip -4 tag:boutique-servers | head -1)
-            if [ -z "$IP" ]; then
-              echo "::error No device found with tag:boutique-servers"
-              exit 1
-            fi
-            echo "host=$IP" >> $GITHUB_OUTPUT
-          fi
+            echo "host=$(tailscale status | grep boutique | head -1 | awk '{print $1}')" >> $GITHUB_OUTPUT
 
       - name: Prepare directories
         uses: appleboy/ssh-action@v1.2.5
