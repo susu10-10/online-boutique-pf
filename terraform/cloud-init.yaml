@@ -136,20 +136,19 @@ runcmd:
   - sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
   - systemctl restart ssh
 
-  # 4. START THE ENGINE FIRST: Force the tailscale background service to run
-  - systemctl daemon-reload
-  - systemctl enable --now tailscaled
+  # 4. Install Tailscale via official script
+  - curl -fsSL https://tailscale.com/install.sh | sh
 
-  # 5. Now wait for tailscaled to report back as completely active (Max 15 seconds)
-  - sh -c 'for i in {1..15}; do systemctl is-active tailscaled >/dev/null 2>&1 && break; echo "Waiting for service..."; sleep 1; done'
+  # 5. Wait for tailscaled to be fully active
+  - sh -c 'for i in $(seq 1 15); do systemctl is-active tailscaled >/dev/null 2>&1 && break; sleep 1; done'
 
-  # 6. Authenticate and bring the private interface online using your single-use key
+  # 6. Join tailnet via OAuth-generated key
   - tailscale up --authkey="${tailscale_authkey}" --ssh --accept-routes --accept-dns=false
 
   # 7. Start Docker
   - systemctl enable --now docker
 
-  # 8. Apply UFW policies (Only seals the gates AFTER Tailscale has cleanly logged in)
+  # 8. UFW policies (after Tailscale is online)
   - ufw default deny incoming
   - ufw default allow outgoing
   - ufw allow in on tailscale0
@@ -162,7 +161,7 @@ runcmd:
   - ufw reload
 
   # 9. Install Cosign
-  - curl -sL https://github.com -o /usr/local/bin/cosign
+  - curl -sL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
   - chmod +x /usr/local/bin/cosign
 
 output:
