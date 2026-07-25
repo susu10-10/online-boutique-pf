@@ -15,7 +15,6 @@ packages:
   - curl
   - jq
   - s3cmd
-  - tailscale
 
 # Create the system user for the boutique server
 users:
