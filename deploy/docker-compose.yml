@@ -8,9 +8,6 @@ networks:
   backend-net:
     driver: bridge
     internal: true
-  data-net:
-    driver: bridge
-    internal: true
 
 volumes:
   redis-data:
@@ -57,7 +54,7 @@ services:
     volumes:
       - redis-data:/data
     networks:
-      - data-net
+      - backend-net
     expose:
       - 6379
     healthcheck:
@@ -142,7 +139,6 @@ services:
     cap_add:
       - NET_BIND_SERVICE
     networks:
-      - data-net
       - backend-net
     deploy:
       resources:
@@ -385,7 +381,7 @@ services:
     image: registry.digitalocean.com/idpreg/loadgenerator:latest
     restart: "no"    # Only run manually
     networks:
-      - backend-net
+      - boutique-net
     environment:
       FRONTEND_ADDR: "frontend:8080"
       USERS: "10"

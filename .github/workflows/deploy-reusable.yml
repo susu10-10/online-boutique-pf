@@ -103,10 +103,10 @@ jobs:
               echo "✅ Redis data loaded from backup"
             fi
 
-            # Health check
+            # Health check via public domain (resolves locally)
             for i in 1 2 3 4 5; do
               sleep 2
-              STATUS=$(curl -so /dev/null -w '%{http_code}' http://localhost/_healthz || echo "Error")
+              STATUS=$(curl -skL -o /dev/null -w '%{http_code}' https://suworks.me/ || echo "Error")
               if [ "$STATUS" = "200" ]; then
                 echo "🚀 Frontend healthy"
                 break
