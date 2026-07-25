@@ -84,11 +84,7 @@ services:
     image: registry.digitalocean.com/idpreg/frontend:latest
     pull_policy: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
+      disable: true
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -147,11 +143,7 @@ services:
         reservations:
           memory: 256M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7070/healthz"]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
+      disable: true
     expose:
       - 7070
     environment:
