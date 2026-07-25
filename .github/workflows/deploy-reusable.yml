@@ -75,7 +75,7 @@ jobs:
             docker tag "$DOCR/frontend:$SHA_TAG" "$DOCR/frontend:latest"
 
             # Start stack
-            docker compose -f /opt/boutique/deploy/docker-compose.yml up -d --remove-orphans
+            docker compose -f /opt/boutique/deploy/docker-compose.yml up -d --remove-orphans || true
 
             # Health check via public domain (resolves locally)
             for i in 1 2 3 4 5; do
