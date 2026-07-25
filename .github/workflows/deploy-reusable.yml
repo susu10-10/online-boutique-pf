@@ -105,11 +105,11 @@ jobs:
 
             # Health check
             for i in 1 2 3 4 5; do
-              STATUS=$(curl -so /dev/null -w '%{http_code}' http://frontend:8080/_healthz || echo "Error")
+              sleep 2
+              STATUS=$(curl -so /dev/null -w '%{http_code}' http://localhost/_healthz || echo "Error")
               if [ "$STATUS" = "200" ]; then
                 echo "🚀 Frontend healthy"
                 break
               fi
-              sleep 2
             done
             [ "$STATUS" != "200" ] && echo "🔴 Health check failed" && exit 1
