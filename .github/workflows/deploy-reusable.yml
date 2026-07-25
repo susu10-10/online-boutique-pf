@@ -56,8 +56,10 @@ jobs:
           key: ${{ secrets.SSH_PRIV_KEY }}
           script: |
             SHA_TAG="sha-${{ github.sha }}"
+            export DOCR=registry.digitalocean.com/idpreg
             echo "${{ secrets.BOUT_ENV_FILE }}" | sudo tee /opt/boutique/deploy/.env > /dev/null
             sudo chmod 600 /opt/boutique/deploy/.env
+            sudo chown boutique:boutique /opt/boutique/deploy/.env
             echo "${{ secrets.COSIGN_PUBLIC_KEY }}" | sudo tee /opt/cosign.pub > /dev/null
             sudo chmod 644 /opt/cosign.pub
             echo "${{ secrets.DO_TOKEN }}" | docker login registry.digitalocean.com -u "${{ secrets.DOCR_USERNAME }}" --password-stdin
