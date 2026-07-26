@@ -52,7 +52,7 @@ jobs:
           TF_VAR_ts_client_secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
 
       - name: Terraform Apply (main only)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve
         env:
           DIGITALOCEAN_TOKEN: ${{ secrets.DO_TOKEN }}
