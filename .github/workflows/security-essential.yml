@@ -60,7 +60,7 @@ jobs:
       - name: Checkov IaC Scan
         uses: bridgecrewio/checkov-action@v12.2982.0
         with:
-          directory: terraform/
+          directory: infrastructure/terraform/
           framework: all
           output_format: sarif
           soft_fail: false

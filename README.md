@@ -107,23 +107,26 @@ Before a single line of code ever hits the pipeline, it must pass GitHub reposit
 
 - Peer Reviews: Merges to the primary branch are blocked until they receive explicit code review approvals.
 - Cryptographic Provenance: Commit signature verification is strictly enforced. Any code block that isn't signed with a trusted GPG or SSH key is rejected at push time, eliminating developer identity spoofing.
+- Runtime verification is handled via a custom bash wrapper script in the GitHub Actions CD runner. Before triggering the deployment, the runner uses cosign verify against DOCR. If verification fails, the pipeline aborts before executing `docker compose up`.
 - Linear History Enforcement: Avoids complex merge commits by requiring clean fast-forward or squash merges, ensuring clear audibility for system changes.
 
 2. Shift-Left Security (CI Gates)
 
 Every pull request undergoes strict static analysis and code quality gates before infrastructure or code changes are accepted:
 
-- Checkov: Scans Terraform configurations to prevent infrastructure misconfigurations (e.g., open security groups).
+- Terraform Checks: Checkov Scans Terraform configurations to prevent infrastructure misconfigurations (e.g., open security groups).
 
-- Hadolint: Validates Dockerfiles against production best practices (e.g., forcing `non-root` users, pinning base image digests).
+- Dockerfile Linting: Hadolint validates Dockerfiles against production best practices (e.g., forcing `non-root` users, pinning base image digests).
 
-- Semgrep & TruffleHog: Analyzes application code for anti-patterns and scans the commit history to ensure no secrets or API keys are leaked.
+- Secret & Code Auditing: Semgrep & TruffleHog both Analyzes application code for anti-patterns and scans the commit history to ensure no secrets or API keys are leaked.
 
-- Trivy: Runs deep scans on both filesystem files and compiled container layers to detect known `CVEs`, blocking the pipeline if high-severity vulnerabilities are found.
+- Vulnerability checks: Trivy Runs deep scans on both filesystem files and compiled container layers to detect known `CVEs`, blocking the pipeline if high-severity vulnerabilities are found.
 
-3. Host and Runtime Hardening (Least Privilege)
+3. Host and Runtime Hardening (Least Privilege & Performance)
 
 The production system is built around defense-in-depth principles at the operating system and container layers:
+
+- Configured strict Docker Compose resource limits (e.g., mem_limit: 256m) and CPU shares to ensure optimal performance and resource utilization.
 
 - Attack Surface Reduction: SSH access via the public IP is completely disabled using a combination of DigitalOcean Cloud Firewalls and local `UFW` rules. System maintenance can only occur through an authenticated `Tailscale` node (`tag:boutique-servers`).
 
