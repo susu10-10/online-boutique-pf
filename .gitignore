@@ -290,3 +290,9 @@ terraform.rc
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,terraform,python,go,git
+
+DOKS*.md
+Doks*.md
+instructions/*
+
+copilot-instructions.md

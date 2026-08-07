@@ -49,7 +49,7 @@ jobs:
           host: ${{ steps.target-host.outputs.host }}
           username: boutique
           key: ${{ secrets.SSH_PRIV_KEY }}
-          source: "deploy/*"
+          source: "infrastructure/deploy/*"
           target: "/opt/boutique/"
 
       - name: Pull, verify, deploy

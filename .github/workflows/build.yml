@@ -6,7 +6,7 @@ on:
     paths:
       - 'src/*'
       - '.github/workflows/build.yml'
-      - 'deploy/docker-compose.yml'
+      - 'infrastructure/deploy/docker-compose.yml'
   workflow_dispatch:
 
 env:
@@ -32,7 +32,7 @@ jobs:
         run: doctl registry login
 
       - name: Build all images
-        run: docker compose -f deploy/docker-compose.yml build
+        run: docker compose -f infrastructure/deploy/docker-compose.yml build
 
       - name: Tag with Git Commit SHA
         run: |
@@ -75,7 +75,7 @@ jobs:
       - name: Push all images to registry
         run: |
           # push both 'latest' (if built) and the unique SHA tags
-          docker compose -f deploy/docker-compose.yml push
+          docker compose -f infrastructure/deploy/docker-compose.yml push
           docker images --format "{{.Repository}}:{{.Tag}}" | grep "$DOCR" | grep "$SHA_TAG" | while read -r img; do
             docker push "$img"
           done

@@ -5,9 +5,9 @@ on:
     branches: [main]
     paths:
       - 'src/**'
-      - 'deploy/**'
+      - 'infrastructure/deploy/**'
       - '.github/workflows/**'
-      - 'terraform/**'
+      - 'infrastructure/terraform/**'
 
 permissions:
   contents: read
