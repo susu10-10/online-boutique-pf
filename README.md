@@ -1,7 +1,26 @@
 
 # Online Boutique: Production-Grade DevSecOps Pipeline
 
+[![PR Checks](https://github.com/susu10-10/online-boutique-pf/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/susu10-10/online-boutique-pf/actions/workflows/pr-checks.yml)
+[![Terraform](https://github.com/susu10-10/online-boutique-pf/actions/workflows/terraform.yml/badge.svg)](https://github.com/susu10-10/online-boutique-pf/actions/workflows/terraform.yml)
+[![Build and Push Boutique Containers](https://github.com/susu10-10/online-boutique-pf/actions/workflows/build.yml/badge.svg)](https://github.com/susu10-10/online-boutique-pf/actions/workflows/build.yml)
+[![Deploy Boutique Container](https://github.com/susu10-10/online-boutique-pf/actions/workflows/deploy.yml/badge.svg)](https://github.com/susu10-10/online-boutique-pf/actions/workflows/deploy.yml)
+
 A GitOps-driven deployment of [Google's 11-microservice Online Boutique app](https://github.com/GoogleCloudPlatform/microservices-demo) on DigitalOcean. This project demonstrates enterprise-grade zero-trust security, automated CI/CD hardening, and immutable infrastructure designed for high security and low operational overhead.
+
+## Contents
+- [Design Decisions](#-design-decisions)
+- [Architecture Highlights](#️-architecture-highlights)
+- [Technical Stack](#️-technical-stack)
+- [Deployment Pipeline & System Topology](#-deployment-pipeline--system-topology)
+- [Security Architecture](#-security-architecture)
+
+## 🧭 Design Decisions
+
+**Tailscale over a bastion host.** The standard pattern for private server access is a dedicated jump box, but that means paying for and maintaining a second droplet whose only job is guarding the first one. Tailscale gives the same outcome (no public SSH surface, identity-gated access) through a WireGuard mesh instead, cutting one droplet from the architecture entirely without weakening the security posture.
+
+**Single droplet over a multi-node cluster.** This is a portfolio project, not a production workload. A single hardened server with strict resource limits showing the security patterns without the cost of infrastructure the traffic doesn't justify.
+
 
 ## 🛠️ Architecture Highlights
 
@@ -133,3 +152,6 @@ The production system is built around defense-in-depth principles at the operati
 - Immutable Container Root FS: Containers run with a read-only root filesystem (read_only: true), rendering runtime malware injections or unauthorized configuration modifications impossible.
 
 - Kernel Capability Dropping: All default Linux capabilities are stripped from the microservices (cap_drop: [ALL]), ensuring that even if a service is compromised, the attacker cannot interact with the host system kernel.
+
+> **Part of a series exploring DevSecOps patterns across platforms:**
+> [`online-boutique-app`](https://github.com/susu10-10/online-boutique-app) · [`online-boutique-doks-pf`](https://github.com/susu10-10/online-boutique-doks-pf) · [`k8s-3tier-automation`](https://github.com/susu10-10/k8s-3tier-automation) · [`3tier-k8s-Hardening`](https://github.com/susu10-10/3tier-k8s-Hardening)
