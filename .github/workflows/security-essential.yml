@@ -76,7 +76,7 @@ jobs:
           echo "✅ Docker Compose file is valid"
 
       - name: Lint all Dockerfiles
-        uses: hadolint/hadolint-action@v3.3.0
+        uses: hadolint/hadolint-action@v3.5.0
         with:
           dockerfile: 'src/*/Dockerfile'
           failure-threshold: error
