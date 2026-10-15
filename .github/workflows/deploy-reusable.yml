@@ -44,7 +44,7 @@ jobs:
             sudo chown -R boutique:boutique /opt/boutique
 
       - name: Copy deploy files
-        uses: appleboy/scp-action@v0.1.0
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ steps.target-host.outputs.host }}
           username: boutique
